@@ -1,5 +1,7 @@
 using System;
 
+#pragma warning disable CS8509
+
 namespace AdventOfCode2022.Solutions
 {
     internal class Day02
