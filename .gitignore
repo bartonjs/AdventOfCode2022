@@ -3,7 +3,8 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-AdventOfCode2022/Data/
+AdventOfCode2022/Data/*.txt
+!AdventOfCode2022/Data/*_sample.txt
 
 # User-specific files
 *.rsuser
