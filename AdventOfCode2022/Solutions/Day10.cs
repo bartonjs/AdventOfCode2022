@@ -1,55 +1,31 @@
 using System;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
 namespace AdventOfCode2022.Solutions
 {
     internal partial class Day10
     {
-        private static IEnumerable<(string, int)> LoadData()
-        {
-            Regex regex = GenEx();
-
-            foreach (string s in Data.Enumerate())
-            {
-                if (s == "noop")
-                {
-                    yield return (s, 0);
-                }
-                else
-                {
-                    Match match = regex.Match(s);
-                    yield return
-                    (
-                        match.Groups[1].Value,
-                        match.Groups.Count > 1 ? int.Parse(match.Groups[2].ValueSpan) : 0);
-                }
-            }
-        }
-
-        [GeneratedRegex(@"^(.+) (-?\d+)?")]
-        private static partial Regex GenEx();
-
         internal static void Problem1()
         {
             int x = 1;
             int cycleCount = 1;
             int score = 0;
 
-            foreach ((string verb, int arg) in LoadData())
+            foreach (Instruction ins in CommComputer.ReadInstructions())
             {
-                switch (verb)
+                switch (ins.Verb)
                 {
-                    case "addx":
-                        if (cycleCount is 19 or 59 or 99 or 139 or 179 or 219)
+                    case Verbs.AddX:
+                        cycleCount++;
+
+                        if (cycleCount is 20 or 60 or 100 or 140 or 180 or 220)
                         {
-                            score += (cycleCount + 1) * x;
+                            score += cycleCount * x;
                         }
 
-                        cycleCount += 2;
-                        x += arg;
+                        cycleCount++;
+                        x += ins.Arg1;
                         break;
-                    case "noop":
+                    case Verbs.NoOp:
                         cycleCount++;
                         break;
                 }
@@ -73,18 +49,18 @@ namespace AdventOfCode2022.Solutions
             int x = 1;
             int cycleCount = 1;
 
-            foreach ((string verb, int arg) in LoadData())
+            foreach (Instruction ins in CommComputer.ReadInstructions())
             {
-                switch (verb)
+                switch (ins.Verb)
                 {
-                    case "addx":
+                    case Verbs.AddX:
                         DrawPixel(cycleCount, x);
                         cycleCount++;
-                        x += arg;
+                        x += ins.Arg1;
                         DrawPixel(cycleCount, x);
                         cycleCount++;
                         break;
-                    case "noop":
+                    case Verbs.NoOp:
                         DrawPixel(cycleCount, x);
                         cycleCount++;
                         break;
