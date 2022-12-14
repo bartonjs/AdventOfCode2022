@@ -201,12 +201,13 @@ namespace AdventOfCode2022.Solutions
             using (StreamWriter writer = new StreamWriter(fs))
             {
                 writer.WriteLine($"Sand X-coordinates range from {minUsedX} to {maxUsedX}");
+                int stopX = maxUsedX + 4;
 
                 for (int y = 0; y <= maxY + 2; y++)
                 {
-                    for (int x = minUsedX; x <= maxUsedX; x++)
+                    for (int x = minUsedX - 3; x < stopX; x++)
                     {
-                        writer.Write(grid[ x, y ] switch { 0 => '.', 1 => '#', 2 => 'o' });
+                        writer.Write(grid[x, y] switch { 0 => '.', 1 => '#', 2 => 'o' });
                     }
 
                     writer.WriteLine();
