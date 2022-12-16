@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -81,6 +82,94 @@ namespace AdventOfCode2022.Solutions
         }
 
         internal static void Problem2()
+        {
+            const int Scale = 4000000;
+
+            (List<(int, int, int)> sensors, HashSet<(int, int)> beacons) = LoadGrid();
+
+            for (int outer = 0; outer < sensors.Count; outer++)
+            {
+                (int, int, int) reference = sensors[outer];
+
+                int x = reference.Item1;
+                int y = reference.Item2 - reference.Item3 - 1;
+
+                while (y < reference.Item2)
+                {
+                    if (Check(reference, x, y, sensors))
+                    {
+                        return;
+                    }
+
+                    x++;
+                    y++;
+                }
+
+
+                while (x > reference.Item1)
+                {
+                    if (Check(reference, x, y, sensors))
+                    {
+                        return;
+                    }
+
+                    x--;
+                    y++;
+                }
+
+                while (y > reference.Item2)
+                {
+                    if (Check(reference, x, y, sensors))
+                    {
+                        return;
+                    }
+
+                    x--;
+                    y--;
+                }
+
+                while (x < reference.Item1)
+                {
+                    if (Check(reference, x, y, sensors))
+                    {
+                        return;
+                    }
+
+                    x++;
+                    y--;
+                }
+
+                Debug.Assert(x == reference.Item1);
+            }
+
+            static bool Check((int, int, int) sensor, int x, int y, List<(int, int, int)> sensors)
+            {
+#if SAMPLE
+                const int Size = 20;
+#else
+                const int Size = 4000000;
+#endif
+                if (x >= 0 && x <= Size && y >= 0 && y <= Size)
+                {
+                    if (!sensors.Any(s => Touches(s, x, y)))
+                    {
+                        Console.WriteLine(
+                            $"Empty spot at ({x}, {y})  => {(long)x * Scale + y}");
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            static bool Touches((int, int, int) sensor, int x, int y)
+            {
+                int distance = Math.Abs(sensor.Item1 - x) + Math.Abs(sensor.Item2 - y);
+                return distance <= sensor.Item3;
+            }
+        }
+
+        internal static void Problem2BruteForce()
         {
 #if SAMPLE
             const int Size = 20;
