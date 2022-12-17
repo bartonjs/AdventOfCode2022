@@ -77,7 +77,19 @@ namespace AdventOfCode2022
             string filename = $"Day{day:D2}.txt";
 #endif
 
-            string[] lines = File.ReadAllLines(Path.Combine("..", "..", "..", "Data", filename));
+            string dataDirParent = AppContext.BaseDirectory;
+            string dataDir = Path.Join(dataDirParent, "Data");
+
+            for (int i = 0; i <= 3; i++)
+            {
+                if (!Directory.Exists(dataDir))
+                {
+                    dataDirParent = Path.Combine(dataDirParent, "..");
+                    dataDir = Path.Join(dataDirParent, "Data");
+                }
+            }
+
+            string[] lines = File.ReadAllLines(Path.Join(dataDir, filename));
             typeof(Data).GetField("s_lines", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, lines);
         }
 
