@@ -45,10 +45,10 @@ namespace AdventOfCode2022.Solutions
             }
         }
 
-        private static Dictionary<string, Valve> Load()
+        private static List<Valve> Load()
         {
             Regex regex = MatchRegex();
-            Dictionary<string, Valve> valves = new Dictionary<string, Valve>();
+            List<Valve> valves = new List<Valve>();
             int index = 0;
 
             foreach (string s in Data.Enumerate())
@@ -82,13 +82,14 @@ namespace AdventOfCode2022.Solutions
                     }
                 }
 
-                valves[v.Name] = v;
+                valves.Add(v);
             }
 
             return valves;
         }
 
-        private static Dictionary<string, Valve> Valves { get; } = Load();
+        private static List<Valve> Valves { get; } = Load();
+        private static Dictionary<string, Valve> ValvesByName { get; } = Valves.ToDictionary(x => x.Name);
 
         private static void Stuff(Dictionary<State, (int Score, int Remain)> states, Valve candidate, State currentState, int remain, int score)
         {
@@ -117,7 +118,7 @@ namespace AdventOfCode2022.Solutions
             {
                 foreach (string conn in candidate.Connections)
                 {
-                    Valve next = Valves[conn];
+                    Valve next = ValvesByName[conn];
                     Stuff(states, next, currentState, rm1, score);
                 }
             }
@@ -150,7 +151,7 @@ namespace AdventOfCode2022.Solutions
 
                         foreach (string conn in candidate.Connections)
                         {
-                            Valve next = Valves[conn];
+                            Valve next = ValvesByName[conn];
                             Stuff(states, next, currentState, rm2, score);
                         }
                     }
@@ -165,11 +166,11 @@ namespace AdventOfCode2022.Solutions
 
         internal static void Problem1()
         {
-            Valve start = Valves["AA"];
+            Valve start = ValvesByName["AA"];
 
             long available = 0;
 
-            foreach (Valve v in Valves.Values)
+            foreach (Valve v in Valves)
             {
                 if (v.Rate > 0)
                 {
@@ -185,8 +186,98 @@ namespace AdventOfCode2022.Solutions
             Console.WriteLine(pair.Value);
         }
 
-        internal static void Problem2a()
+        private record struct State2(int CurrentNode, long ClosedValves, int TimeRemaining, int ActorId);
+
+        private static int Stuff2(Dictionary<State2, int> cache, int startTime, State2 testState)
         {
+            if (testState.TimeRemaining <= 0)
+            {
+                if (testState.ActorId == 0)
+                {
+                    return 0;
+                }
+
+                State2 nextState = testState with
+                {
+                    ActorId = testState.ActorId - 1,
+                    TimeRemaining = startTime,
+                    CurrentNode = ValvesByName["AA"].Index,
+                };
+
+                return Stuff2(cache, startTime, nextState);
+            }
+
+            if (cache.TryGetValue(testState, out int knownValue))
+            {
+                return knownValue;
+            }
+
+            int max = 0;
+            Valve currentValve = Valves[testState.CurrentNode];
+            long testBit = 1L << currentValve.Index;
+            int trm1 = testState.TimeRemaining - 1;
+
+            if ((testState.ClosedValves & testBit) == testBit)
+            {
+                Debug.Assert(currentValve.Rate > 0);
+
+                int trm2 = trm1 - 1;
+                int localScore = trm1 * currentValve.Rate;
+                max = localScore;
+
+                long newValveState = testState.ClosedValves & ~testBit;
+
+                foreach (string conn in currentValve.Connections)
+                {
+                    Valve nextValve = ValvesByName[conn];
+                    State2 nextState = testState with
+                    {
+                        CurrentNode = nextValve.Index,
+                        TimeRemaining = trm2,
+                        ClosedValves = newValveState,
+                    };
+
+                    int dive = Stuff2(cache, startTime, nextState);
+
+                    max = Math.Max(max, dive + localScore);
+                }
+            }
+
+            foreach (string conn in currentValve.Connections)
+            {
+                Valve nextValve = ValvesByName[ conn ];
+                State2 nextState = testState with { CurrentNode = nextValve.Index, TimeRemaining = trm1 };
+                int dive = Stuff2(cache, startTime, nextState);
+
+                max = Math.Max(max, dive);
+            }
+
+            cache[testState] = max;
+            return max;
+        }
+
+        internal static void Problem2()
+        {
+            long available = 0;
+
+            foreach (Valve v in Valves)
+            {
+                if (v.Rate > 0)
+                {
+                    available |= (1L << v.Index);
+                }
+            }
+
+            State2 start = new State2
+            {
+                ActorId = 2,
+                ClosedValves = available,
+            };
+
+            Dictionary<State2, int> cache = new Dictionary<State2, int>();
+            int score = Stuff2(cache, 26, start);
+            Console.WriteLine($"{cache.Count} known state(s).");
+            Console.WriteLine(score);
         }
     }
 }
