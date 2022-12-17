@@ -233,7 +233,7 @@ namespace AdventOfCode2022.Solutions
                     return localScore;
                 }
 
-                if (testState.ActorId > 0 || testState.TimeRemaining > 4)
+                if (testState.TimeRemaining > 3)
                 {
                     foreach (string conn in currentValve.Connections)
                     {
@@ -250,9 +250,14 @@ namespace AdventOfCode2022.Solutions
                         max = Math.Max(max, dive + localScore);
                     }
                 }
+                else
+                {
+                    State2 nextState = testState with { TimeRemaining = 0 };
+                    return Stuff2(cache, startTime, nextState);
+                }
             }
 
-            if (testState.ActorId > 0 || testState.TimeRemaining > 3)
+            if (testState.TimeRemaining > 3)
             {
                 foreach (string conn in currentValve.Connections)
                 {
@@ -262,6 +267,11 @@ namespace AdventOfCode2022.Solutions
 
                     max = Math.Max(max, dive);
                 }
+            }
+            else
+            {
+                State2 nextState = testState with { TimeRemaining = 0 };
+                return Stuff2(cache, startTime, nextState);
             }
 
             cache[testState] = max;
