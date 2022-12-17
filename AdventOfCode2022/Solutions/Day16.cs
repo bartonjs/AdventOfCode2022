@@ -190,7 +190,7 @@ namespace AdventOfCode2022.Solutions
 
         private static int Stuff2(Dictionary<State2, int> cache, int startTime, State2 testState)
         {
-            if (testState.TimeRemaining <= 0)
+            if (testState.TimeRemaining <= 1)
             {
                 if (testState.ActorId == 0)
                 {
@@ -227,29 +227,41 @@ namespace AdventOfCode2022.Solutions
 
                 long newValveState = testState.ClosedValves & ~testBit;
 
-                foreach (string conn in currentValve.Connections)
+                if (testState.ActorId == 0 && newValveState == 0)
                 {
-                    Valve nextValve = ValvesByName[conn];
-                    State2 nextState = testState with
+                    cache[testState] = localScore;
+                    return localScore;
+                }
+
+                if (testState.ActorId > 0 || testState.TimeRemaining > 4)
+                {
+                    foreach (string conn in currentValve.Connections)
                     {
-                        CurrentNode = nextValve.Index,
-                        TimeRemaining = trm2,
-                        ClosedValves = newValveState,
-                    };
+                        Valve nextValve = ValvesByName[conn];
+                        State2 nextState = testState with
+                        {
+                            CurrentNode = nextValve.Index,
+                            TimeRemaining = trm2,
+                            ClosedValves = newValveState,
+                        };
 
-                    int dive = Stuff2(cache, startTime, nextState);
+                        int dive = Stuff2(cache, startTime, nextState);
 
-                    max = Math.Max(max, dive + localScore);
+                        max = Math.Max(max, dive + localScore);
+                    }
                 }
             }
 
-            foreach (string conn in currentValve.Connections)
+            if (testState.ActorId > 0 || testState.TimeRemaining > 3)
             {
-                Valve nextValve = ValvesByName[ conn ];
-                State2 nextState = testState with { CurrentNode = nextValve.Index, TimeRemaining = trm1 };
-                int dive = Stuff2(cache, startTime, nextState);
+                foreach (string conn in currentValve.Connections)
+                {
+                    Valve nextValve = ValvesByName[conn];
+                    State2 nextState = testState with { CurrentNode = nextValve.Index, TimeRemaining = trm1 };
+                    int dive = Stuff2(cache, startTime, nextState);
 
-                max = Math.Max(max, dive);
+                    max = Math.Max(max, dive);
+                }
             }
 
             cache[testState] = max;
