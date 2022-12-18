@@ -28,14 +28,14 @@ namespace AdventOfCode2022
             where TPosition : IEquatable<TPosition>
         {
             PriorityQueue<TPosition, TCost> openSet = new PriorityQueue<TPosition, TCost>();
-            HashSet<TPosition> openSetFilter = new HashSet<TPosition>();
             Dictionary<TPosition, TPosition> cameFrom = (pathToFill is null) ? null : new Dictionary<TPosition, TPosition>();
             gScore ??= new Dictionary<TPosition, TCost>();
 
             gScore[start] = TCost.Zero;
+            Dictionary<TPosition, TCost> fScore = new Dictionary<TPosition, TCost>();
 
             openSet.Enqueue(start, TCost.Zero);
-            openSetFilter.Add(start);
+            fScore[start] = TCost.Zero;
 
             while (openSet.Count > 0)
             {
@@ -46,7 +46,7 @@ namespace AdventOfCode2022
                     break;
                 }
 
-                openSetFilter.Remove(current);
+                fScore.Remove(current);
                 TCost currentScore = gScore[current];
 
                 foreach ((TPosition neighbor, TCost cost) in neighbors(current, world))
@@ -67,9 +67,18 @@ namespace AdventOfCode2022
 
                         TCost estimatedCost = tentative + estimator(neighbor, end, world);
 
-                        if (openSetFilter.Add(neighbor))
+                        ref TCost currentEstimate =
+                            ref CollectionsMarshal.GetValueRefOrAddDefault(fScore, neighbor, out exists);
+
+                        if (!exists)
                         {
+                            currentEstimate = estimatedCost;
                             openSet.Enqueue(neighbor, estimatedCost);
+                        }
+                        else if (currentEstimate > estimatedCost)
+                        {
+                            currentEstimate = estimatedCost;
+                            ChangePriority(openSet, neighbor, estimatedCost);
                         }
                     }
                 }
@@ -139,6 +148,30 @@ namespace AdventOfCode2022
             }
 
             return (false, default(TNode));
+        }
+
+        private static void ChangePriority<TElement, TPriority>(
+            PriorityQueue<TElement, TPriority> queue,
+            TElement element,
+            TPriority newPriority)
+            where TElement : IEquatable<TElement>
+        {
+            List<(TElement, TPriority)> temp = new List<(TElement, TPriority)>(queue.Count);
+
+            foreach ((TElement Element, TPriority Priority) item in queue.UnorderedItems)
+            {
+                if (item.Element.Equals(element))
+                {
+                    temp.Add((element, newPriority));
+                }
+                else
+                {
+                    temp.Add(item);
+                }
+            }
+
+            queue.Clear();
+            queue.EnqueueRange(temp);
         }
     }
 }
