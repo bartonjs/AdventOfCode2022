@@ -90,6 +90,9 @@ namespace AdventOfCode2022.Solutions
 
         private static List<Valve> Valves { get; } = Load();
         private static Dictionary<string, Valve> ValvesByName { get; } = Valves.ToDictionary(x => x.Name);
+        private static int CacheHits;
+        private static int CacheMisses;
+        private static int CacheIgnoreds;
 
         private static void Stuff(Dictionary<State, (int Score, int Remain)> states, Valve candidate, State currentState, int remain, int score)
         {
@@ -101,13 +104,21 @@ namespace AdventOfCode2022.Solutions
             {
                 if (cur.Score > score)
                 {
+                    CacheHits++;
                     return;
                 }
                 
                 if (cur.Score == score && cur.Remain >= remain)
                 {
+                    CacheHits++;
                     return;
                 }
+
+                CacheIgnoreds++;
+            }
+            else
+            {
+                CacheMisses++;
             }
 
             cur = (score, remain);
@@ -183,7 +194,12 @@ namespace AdventOfCode2022.Solutions
             Stuff(states, start, startState, 30, 0);
             KeyValuePair<State, (int Score, int Remain)> pair = MaxState(states);
             Console.WriteLine($"{states.Count} known state(s).");
+            Console.WriteLine($"Cache hits: {CacheHits}");
+            Console.WriteLine($"Cache misses: {CacheMisses}");
+            Console.WriteLine($"Cache had an entry but I did work anyways: {CacheIgnoreds}");
+            Console.WriteLine();
             Console.WriteLine(pair.Value);
+            Console.WriteLine();
         }
 
         private record struct State2(int CurrentNode, long ClosedValves, int TimeRemaining, int ActorId);
@@ -209,8 +225,11 @@ namespace AdventOfCode2022.Solutions
 
             if (cache.TryGetValue(testState, out int knownValue))
             {
+                CacheHits++;
                 return knownValue;
             }
+
+            CacheMisses++;
 
             int max = 0;
             Valve currentValve = Valves[testState.CurrentNode];
@@ -233,7 +252,7 @@ namespace AdventOfCode2022.Solutions
                     return localScore;
                 }
 
-                if (testState.TimeRemaining > 3)
+                if (testState.TimeRemaining > 2)
                 {
                     foreach (string conn in currentValve.Connections)
                     {
@@ -257,7 +276,7 @@ namespace AdventOfCode2022.Solutions
                 }
             }
 
-            if (testState.TimeRemaining > 3)
+            if (testState.TimeRemaining > 2)
             {
                 foreach (string conn in currentValve.Connections)
                 {
@@ -299,7 +318,12 @@ namespace AdventOfCode2022.Solutions
             Dictionary<State2, int> cache = new Dictionary<State2, int>();
             int score = Stuff2(cache, 26, start);
             Console.WriteLine($"{cache.Count} known state(s).");
+            Console.WriteLine($"Cache hits: {CacheHits}");
+            Console.WriteLine($"Cache misses: {CacheMisses}");
+            Console.WriteLine($"Cache had an entry but I did work anyways: {CacheIgnoreds}");
+            Console.WriteLine();
             Console.WriteLine(score);
+            Console.WriteLine();
         }
     }
 }
