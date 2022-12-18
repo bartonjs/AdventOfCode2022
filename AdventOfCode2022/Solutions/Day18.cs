@@ -1,8 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
 
 namespace AdventOfCode2022.Solutions
 {
@@ -10,21 +7,9 @@ namespace AdventOfCode2022.Solutions
     {
         private const int GridSize = 50;
 
-        private static byte[][][] Load()
+        private static byte[,,] Load()
         {
-            byte[][][] grid = new byte[GridSize][][];
-
-            for (int x = 0; x < GridSize; x++)
-            {
-                byte[][] slice = new byte[GridSize][];
-                grid[x] = slice;
-
-                for (int y = 0; y < GridSize; y++)
-                {
-                    byte[] piece = new byte[GridSize];
-                    slice[y] = piece;
-                }
-            }
+            byte[,,] grid = new byte[GridSize,GridSize,GridSize];
 
             foreach (string s in Data.Enumerate())
             {
@@ -37,7 +22,7 @@ namespace AdventOfCode2022.Solutions
                 line = line.Slice(commaIdx + 1);
                 int z = int.Parse(line);
 
-                grid[x + 1][y + 1][z + 1] = 1;
+                grid[x + 1, y + 1, z + 1] = 1;
             }
 
             return grid;
@@ -45,13 +30,13 @@ namespace AdventOfCode2022.Solutions
 
         internal static void Problem1()
         {
-            byte[][][] grid = Load();
+            byte[,,] grid = Load();
             int faces = CountFaces(grid);
 
             Console.WriteLine(faces);
         }
 
-        private static int CountFaces(byte[][][] grid)
+        private static int CountFaces(byte[,,] grid)
         {
             int faces = 0;
 
@@ -60,14 +45,13 @@ namespace AdventOfCode2022.Solutions
                 for (int y = 0; y < GridSize; y++)
                 {
                     byte inside = 0;
-                    byte[] piece = grid[x][y];
 
                     for (int z = 0; z < GridSize; z++)
                     {
-                        if (piece[z] != inside)
+                        if (grid[x, y, z] != inside)
                         {
                             faces++;
-                            inside = piece[z];
+                            inside = grid[x, y, z];
                         }
                     }
                 }
@@ -75,18 +59,16 @@ namespace AdventOfCode2022.Solutions
 
             for (int x = 0; x < GridSize; x++)
             {
-                byte[][] plane = grid[x];
-
                 for (int z = 0; z < GridSize; z++)
                 {
                     byte inside = 0;
 
                     for (int y = 0; y < GridSize; y++)
                     {
-                        if (plane[y][z] != inside)
+                        if (grid[x, y, z] != inside)
                         {
                             faces++;
-                            inside = plane[y][z];
+                            inside = grid[x, y, z];
                         }
                     }
                 }
@@ -100,12 +82,10 @@ namespace AdventOfCode2022.Solutions
 
                     for (int x = 0; x < GridSize; x++)
                     {
-                        byte test = grid[x][y][z];
-
-                        if (test != inside)
+                        if (grid[x, y, z] != inside)
                         {
                             faces++;
-                            inside = test;
+                            inside = grid[x, y, z];
                         }
                     }
                 }
@@ -116,17 +96,63 @@ namespace AdventOfCode2022.Solutions
 
         internal static void Problem2()
         {
-            byte[][][] grid = Load();
+            byte[,,] grid = Load();
+            byte[,,] outside = new byte[GridSize, GridSize, GridSize];
 
-            for (int x = 0; x < GridSize; x++)
-            {
-                for (int y = 0; y < GridSize; y++)
+            Point3 zero = new Point3(0, 0, 0);
+
+            Utils.BreadthFirstSearch(
+                grid,
+                zero,
+                node =>
                 {
-                    for (int z = 0; z < GridSize; z++)
+                    outside[node.X, node.Y, node.Z] = 1;
+                    return false;
+                },
+                Children);
+
+            static IEnumerable<Point3> Children(Point3 from, byte[,,] world)
+            {
+                if (from.X > 0 && world[from.X - 1, from.Y, from.Z] == 0)
+                {
+                    yield return new Point3(from.X - 1, from.Y, from.Z);
+                }
+
+                if (from.X < GridSize - 1 && world[from.X + 1, from.Y, from.Z] == 0)
+                {
+                    yield return new Point3(from.X + 1, from.Y, from.Z);
+                }
+
+                if (from.Y > 0 && world[from.X, from.Y - 1, from.Z] == 0)
+                {
+                    yield return new Point3(from.X, from.Y - 1, from.Z);
+                }
+
+                if (from.Y < GridSize - 1 && world[from.X, from.Y + 1, from.Z] == 0)
+                {
+                    yield return new Point3(from.X, from.Y + 1, from.Z);
+                }
+
+                if (from.Z > 0 && world[from.X, from.Y, from.Z - 1] == 0)
+                {
+                    yield return new Point3(from.X, from.Y, from.Z - 1);
+                }
+
+                if (from.Z < GridSize - 1 && world[from.X, from.Y, from.Z + 1] == 0)
+                {
+                    yield return new Point3(from.X, from.Y, from.Z + 1);
+                }
+            }
+
+            for (int x = GridSize - 1; x >= 0; x--)
+            {
+                for (int y = GridSize - 1; y >= 0; y--)
+                {
+                    for (int z = GridSize - 1; z >= 0; z--)
                     {
-                        if (grid[x][y][z] == 0 && !CanReachZero(grid, x, y, z))
+                        if (grid[x, y, z] == 0 && outside[x, y, z] != 1)
                         {
-                            grid[x][y][z] = 1;
+                            grid[x, y, z] = 1;
                         }
                     }
                 }
@@ -134,91 +160,6 @@ namespace AdventOfCode2022.Solutions
 
             int faces = CountFaces(grid);
             Console.WriteLine(faces);
-        }
-
-        private static bool CanReachZero(byte[][][] grid, int x, int y, int z)
-        {
-            Point3 test = new Point3(x, y, z);
-
-            if (s_gScore.TryGetValue(test, out int endScore))
-            {
-                return endScore == 0;
-            }
-
-            return FindCheapestPath(grid, test) == 0;
-        }
-
-        private static Dictionary<Point3, int> s_gScore = new Dictionary<Point3, int>
-        {
-            { new Point3(0,0,0), 0 },
-        };
-
-        private static int FindCheapestPath(byte[][][] grid, Point3 start)
-        {
-            HashSet<Point3> openSet = new HashSet<Point3> { new Point3(0, 0, 0) };
-
-            if (s_gScore.TryGetValue(start, out int endScore))
-            {
-                return endScore;
-            }
-
-            while (openSet.Count > 0)
-            {
-                var current = openSet.First();
-                openSet.Remove(current);
-
-                if (current == start)
-                {
-                    continue;
-                }
-
-                for (int deltaX = -1; deltaX < 2; deltaX++)
-                {
-                    for (int deltaY = -1; deltaY < 2; deltaY++)
-                    {
-                        for (int deltaZ = -1; deltaZ < 2; deltaZ++)
-                        {
-                            if (Math.Abs(deltaX) + Math.Abs(deltaY) + Math.Abs(deltaZ) != 1)
-                            {
-                                continue;
-                            }
-
-                            int x = current.X + deltaX;
-                            int y = current.Y + deltaY;
-                            int z = current.Z + deltaZ;
-
-                            if (x < 0 || y < 0 || z < 0 ||
-                                x >= GridSize || y >= GridSize || z >= GridSize)
-                            {
-                                continue;
-                            }
-
-                            if (grid[x][y][z] == 0)
-                            {
-                                Point3 neighbor = new Point3(x, y, z);
-                                int score = 0;
-
-                                ref int neighborCost =
-                                    ref CollectionsMarshal.GetValueRefOrAddDefault(s_gScore, neighbor, out bool exists);
-
-                                if (!exists || score < neighborCost)
-                                {
-                                    neighborCost = score;
-                                    openSet.Add(neighbor);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (s_gScore.TryGetValue(start, out endScore))
-            {
-                return endScore;
-            }
-
-            s_gScore[start] = 1;
-            return 1;
         }
     }
 }

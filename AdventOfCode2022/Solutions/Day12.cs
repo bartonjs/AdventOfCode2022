@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace AdventOfCode2022.Solutions
@@ -71,98 +70,37 @@ namespace AdventOfCode2022.Solutions
 
         private static int FindCheapestPath(int[][] grid, Point start, Point end)
         {
-            int rowMax = grid[0].Length;
+            return Utils.AStar(
+                grid,
+                start,
+                end,
+                Neighbors,
+                (candidate, end, world) => candidate.ManhattanDistance(end));
 
-            HashSet<Point> openSet = new HashSet<Point> { start };
-            Dictionary<Point, int> gScore = new Dictionary<Point, int>();
-
-#if SAMPLE
-            Dictionary<Point, Point> cameFrom = new Dictionary<Point, Point>();
-#endif
-
-            gScore[start] = 0;
-
-            while (openSet.Count > 0)
+            static IEnumerable<(Point Neighbor, int Cost)> Neighbors(Point from, int[][] world)
             {
-                Point current = openSet.First();
-                openSet.Remove(current);
+                int curHeight = world[from.X][from.Y];
 
-                if (current == end)
+                if (from.X > 0 && world[from.X - 1][from.Y] - curHeight <= 1)
                 {
-                    continue;
+                    yield return (new Point(from.X - 1, from.Y), 1);
                 }
 
-                int curHeight = grid[current.X][current.Y];
-
-                for (int deltaX = -1; deltaX < 2; deltaX++)
+                if (from.X < world.Length - 1 && world[from.X + 1][from.Y] - curHeight <= 1)
                 {
-                    for (int deltaY = -1; deltaY < 2; deltaY++)
-                    {
-                        if (Math.Abs(deltaX) + Math.Abs(deltaY) != 1)
-                        {
-                            continue;
-                        }
-
-                        int x = current.X + deltaX;
-                        int y = current.Y + deltaY;
-
-                        if (x < 0 || x >= grid.Length || y < 0 || y >= rowMax)
-                        {
-                            continue;
-                        }
-
-                        int testHeight = grid[x][y];
-                        Point neighbor = new Point(x, y);
-
-                        if (testHeight - curHeight <= 1)
-                        {
-                            int score = gScore[current] + 1;
-
-                            ref int neighborCost =
-                                ref CollectionsMarshal.GetValueRefOrAddDefault(gScore, neighbor, out bool exists);
-
-                            if (!exists || score < neighborCost)
-                            {
-                                neighborCost = score;
-#if SAMPLE
-                                cameFrom[neighbor] = current;
-#endif
-
-                                openSet.Add(neighbor);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (gScore.TryGetValue(end, out int endScore))
-            {
-#if SAMPLE
-                Console.WriteLine("===");
-
-                Point cur = end;
-
-                while (cur != start)
-                {
-                    Point from = cameFrom[cur];
-
-                    Console.WriteLine($" {cur} from {from}");
-                    cur = from;
+                    yield return (new Point(from.X + 1, from.Y), 1);
                 }
 
-                Console.WriteLine($"Path length: {endScore}");
-#endif
+                if (from.Y > 0 && world[from.X][from.Y - 1] - curHeight <= 1)
+                {
+                    yield return (new Point(from.X, from.Y - 1), 1);
+                }
 
-                return endScore;
+                if (from.Y < world[from.X].Length - 1 && world[from.X][from.Y + 1] - curHeight <= 1)
+                {
+                    yield return (new Point(from.X, from.Y + 1), 1);
+                }
             }
-#if SAMPLE
-            else
-            {
-                Console.WriteLine("... No solution.");
-            }
-#endif
-
-            return int.MaxValue;
         }
     }
 }

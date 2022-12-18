@@ -13,6 +13,11 @@ namespace AdventOfCode2022
             Y = y;
         }
 
+        internal int ManhattanDistance(Point other)
+        {
+            return Math.Abs(X - other.X) + Math.Abs(Y - other.Y);
+        }
+
         public override string ToString() => $"({X}, {Y})";
 
         public bool Equals(Point other)
@@ -43,6 +48,11 @@ namespace AdventOfCode2022
         {
             X = x;
             Y = y;
+        }
+
+        internal long ManhattanDistance(LongPoint other)
+        {
+            return Math.Abs(X - other.X) + Math.Abs(Y - other.Y);
         }
 
         public override string ToString() => $"({X}, {Y})";
@@ -79,6 +89,11 @@ namespace AdventOfCode2022
             Z = z;
         }
 
+        internal int ManhattanDistance(Point3 other)
+        {
+            return Math.Abs(X - other.X) + Math.Abs(Y - other.Y) + Math.Abs(Z - other.Z);
+        }
+
         public override string ToString() => $"({X}, {Y}, {Z})";
 
         public bool Equals(Point3 other)
@@ -111,6 +126,11 @@ namespace AdventOfCode2022
             X = x;
             Y = y;
             Z = z;
+        }
+
+        internal long ManhattanDistance(LongPoint3 other)
+        {
+            return Math.Abs(X - other.X) + Math.Abs(Y - other.Y) + Math.Abs(Z - other.Z);
         }
 
         public override string ToString() => $"({X}, {Y}, {Z})";
