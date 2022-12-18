@@ -5,6 +5,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <Configurations>Debug;Release;Sample</Configurations>
 	<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+	<NoWarn>$(NoWarn);CS8509</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

@@ -361,9 +361,6 @@ namespace AdventOfCode2022.Solutions
             int spawned = 0;
 
             int windCycle = Data.Enumerate().Single().Length;
-            int firstHeight = 0;
-            int secondHeight = 0;
-
             int windCount = 0;
 
             Dictionary<WorldState, (int,int,int)> profile = new Dictionary<WorldState, (int,int,int)>();

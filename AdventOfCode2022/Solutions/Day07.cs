@@ -64,7 +64,6 @@ namespace AdventOfCode2022.Solutions
 
         internal static void Problem1()
         {
-            long sum = 0;
             Path root = LoadPath();
 
             static long Sum(Path path)

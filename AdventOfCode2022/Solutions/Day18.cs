@@ -138,7 +138,7 @@ namespace AdventOfCode2022.Solutions
 
         private static bool CanReachZero(byte[][][] grid, int x, int y, int z)
         {
-            var test = (x,y,z);
+            Point3 test = new Point3(x, y, z);
 
             if (s_gScore.TryGetValue(test, out int endScore))
             {
@@ -148,18 +148,14 @@ namespace AdventOfCode2022.Solutions
             return FindCheapestPath(grid, test) == 0;
         }
 
-        private static Dictionary<(int, int, int), int> s_gScore = new Dictionary<(int, int, int), int>
+        private static Dictionary<Point3, int> s_gScore = new Dictionary<Point3, int>
         {
-            { (0,0,0), 0 },
+            { new Point3(0,0,0), 0 },
         };
 
-        private static int FindCheapestPath(byte[][][] grid, (int, int, int) start)
+        private static int FindCheapestPath(byte[][][] grid, Point3 start)
         {
-            HashSet<(int, int, int)> openSet = new HashSet<(int, int, int)> { (0, 0, 0) };
-
-            if (start == (3, 3, 6))
-            {
-            }
+            HashSet<Point3> openSet = new HashSet<Point3> { new Point3(0, 0, 0) };
 
             if (s_gScore.TryGetValue(start, out int endScore))
             {
@@ -187,9 +183,9 @@ namespace AdventOfCode2022.Solutions
                                 continue;
                             }
 
-                            int x = current.Item1 + deltaX;
-                            int y = current.Item2 + deltaY;
-                            int z = current.Item3 + deltaZ;
+                            int x = current.X + deltaX;
+                            int y = current.Y + deltaY;
+                            int z = current.Z + deltaZ;
 
                             if (x < 0 || y < 0 || z < 0 ||
                                 x >= GridSize || y >= GridSize || z >= GridSize)
@@ -199,7 +195,7 @@ namespace AdventOfCode2022.Solutions
 
                             if (grid[x][y][z] == 0)
                             {
-                                var neighbor = (x, y, z);
+                                Point3 neighbor = new Point3(x, y, z);
                                 int score = 0;
 
                                 ref int neighborCost =

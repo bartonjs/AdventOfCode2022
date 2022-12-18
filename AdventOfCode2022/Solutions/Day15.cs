@@ -12,11 +12,22 @@ namespace AdventOfCode2022.Solutions
         [GeneratedRegex(@"Sensor at x=(-?\d+), y=(-?\d+): closest beacon is at x=(-?\d+), y=(-?\d+)")]
         private static partial Regex MatchRegex();
 
-        private static (List<(int, int, int)> sensors, HashSet<(int, int)> beacons) LoadGrid()
+        private record struct Sensor(Point Point, int Distance)
+        {
+            internal int X => Point.X;
+            internal int Y => Point.Y;
+
+            internal Sensor(int x, int y, int distance)
+                : this(new Point(x, y), distance)
+            {
+            }
+        }
+
+        private static (List<Sensor> sensors, HashSet<Point> beacons) LoadGrid()
         {
             Regex matcher = MatchRegex();
-            List<(int, int, int)> sensors = new List<(int, int, int)>();
-            HashSet<(int, int)> beacons = new HashSet<(int, int)>();
+            List<Sensor> sensors = new List<Sensor>();
+            HashSet<Point> beacons = new HashSet<Point>();
 
             foreach (string s in Data.Enumerate())
             {
@@ -29,8 +40,8 @@ namespace AdventOfCode2022.Solutions
 
                 int sensorDistance = Math.Abs(sensorX - beaconX) + Math.Abs(sensorY - beaconY);
 
-                sensors.Add((sensorX, sensorY, sensorDistance));
-                beacons.Add((beaconX, beaconY));
+                sensors.Add(new Sensor(sensorX, sensorY, sensorDistance));
+                beacons.Add(new Point(beaconX, beaconY));
             }
 
             return (sensors, beacons);
@@ -39,7 +50,7 @@ namespace AdventOfCode2022.Solutions
         internal static void Problem1()
         {
             HashSet<int> points = new HashSet<int>();
-            (List<(int, int, int)> sensors, HashSet<(int, int)> beacons) = LoadGrid();
+            (List<Sensor> sensors, HashSet<Point> beacons) = LoadGrid();
 
 #if SAMPLE
             const int TargetY = 10;
@@ -49,19 +60,19 @@ namespace AdventOfCode2022.Solutions
 
             foreach (var sensor in sensors)
             {
-                for (int i = 0; i < sensor.Item3; i++)
+                for (int i = 0; i < sensor.Distance; i++)
                 {
-                    int yPlus = sensor.Item2 + i;
-                    int yMinus = sensor.Item2 - i;
+                    int yPlus = sensor.Y + i;
+                    int yMinus = sensor.Y - i;
 
                     if (yPlus == TargetY || yMinus == TargetY)
                     {
-                        int delta = sensor.Item3 - i;
+                        int delta = sensor.Distance - i;
 
                         for (int j = 0; j <= delta; j++)
                         {
-                            points.Add(sensor.Item1 + j);
-                            points.Add(sensor.Item1 - j);
+                            points.Add(sensor.X + j);
+                            points.Add(sensor.X - j);
                         }
                     }
                 }
@@ -69,9 +80,9 @@ namespace AdventOfCode2022.Solutions
 
             foreach (var beacon in beacons)
             {
-                if (beacon.Item2 == TargetY)
+                if (beacon.Y == TargetY)
                 {
-                    points.Remove(beacon.Item1);
+                    points.Remove(beacon.X);
                 }
             }
 
@@ -85,16 +96,16 @@ namespace AdventOfCode2022.Solutions
         {
             const int Scale = 4000000;
 
-            (List<(int, int, int)> sensors, HashSet<(int, int)> beacons) = LoadGrid();
+            (List<Sensor> sensors, HashSet<Point> beacons) = LoadGrid();
 
             for (int outer = 0; outer < sensors.Count; outer++)
             {
-                (int, int, int) reference = sensors[outer];
+                Sensor reference = sensors[outer];
 
-                int x = reference.Item1;
-                int y = reference.Item2 - reference.Item3 - 1;
+                int x = reference.X;
+                int y = reference.Y - reference.Distance - 1;
 
-                while (y < reference.Item2)
+                while (y < reference.Y)
                 {
                     if (Check(reference, x, y, sensors))
                     {
@@ -106,7 +117,7 @@ namespace AdventOfCode2022.Solutions
                 }
 
 
-                while (x > reference.Item1)
+                while (x > reference.X)
                 {
                     if (Check(reference, x, y, sensors))
                     {
@@ -117,7 +128,7 @@ namespace AdventOfCode2022.Solutions
                     y++;
                 }
 
-                while (y > reference.Item2)
+                while (y > reference.Y)
                 {
                     if (Check(reference, x, y, sensors))
                     {
@@ -128,7 +139,7 @@ namespace AdventOfCode2022.Solutions
                     y--;
                 }
 
-                while (x < reference.Item1)
+                while (x < reference.X)
                 {
                     if (Check(reference, x, y, sensors))
                     {
@@ -139,10 +150,10 @@ namespace AdventOfCode2022.Solutions
                     y--;
                 }
 
-                Debug.Assert(x == reference.Item1);
+                Debug.Assert(x == reference.X);
             }
 
-            static bool Check((int, int, int) sensor, int x, int y, List<(int, int, int)> sensors)
+            static bool Check(Sensor sensor, int x, int y, List<Sensor> sensors)
             {
 #if SAMPLE
                 const int Size = 20;
@@ -162,10 +173,10 @@ namespace AdventOfCode2022.Solutions
                 return false;
             }
 
-            static bool Touches((int, int, int) sensor, int x, int y)
+            static bool Touches(Sensor sensor, int x, int y)
             {
-                int distance = Math.Abs(sensor.Item1 - x) + Math.Abs(sensor.Item2 - y);
-                return distance <= sensor.Item3;
+                int distance = Math.Abs(sensor.X - x) + Math.Abs(sensor.Y - y);
+                return distance <= sensor.Distance;
             }
         }
 
@@ -178,7 +189,7 @@ namespace AdventOfCode2022.Solutions
 #endif
             const int Scale = 4000000;
 
-            (List<(int, int, int)> sensors, HashSet<(int, int)> beacons) = LoadGrid();
+            (List<Sensor> sensors, HashSet<Point> beacons) = LoadGrid();
             List<Thread> threads = new List<Thread>();
 
             int sliceSize = Size / Math.Max(1, Environment.ProcessorCount - 1);
@@ -201,14 +212,14 @@ namespace AdventOfCode2022.Solutions
 
                             foreach (var sensor in sensors)
                             {
-                                int yDiff = Math.Abs(sensor.Item2 - targetY);
+                                int yDiff = Math.Abs(sensor.Y - targetY);
 
-                                int delta = sensor.Item3 - yDiff;
+                                int delta = sensor.Distance - yDiff;
 
                                 if (delta >= 0)
                                 {
-                                    int xMin = Math.Max(sensor.Item1 - delta, 0);
-                                    int xMax = Math.Min(sensor.Item1 + delta, Size);
+                                    int xMin = Math.Max(sensor.X - delta, 0);
+                                    int xMax = Math.Min(sensor.X + delta, Size);
                                     row.AsSpan(xMin, xMax - xMin + 1).Fill(true);
                                 }
                             }

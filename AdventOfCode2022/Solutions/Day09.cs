@@ -25,7 +25,7 @@ namespace AdventOfCode2022.Solutions
 
         internal static void Problem1()
         {
-            HashSet<(int, int)> tailPositions = new HashSet<(int, int)>();
+            HashSet<Point> tailPositions = new HashSet<Point>();
 
             int tailX, tailY, headX, headY;
             tailX = tailY = headX = headY = 0;
@@ -67,7 +67,7 @@ namespace AdventOfCode2022.Solutions
                         tailY += Math.Sign(yDiff);
                     }
 
-                    tailPositions.Add((tailX, tailY));
+                    tailPositions.Add(new Point(tailX, tailY));
 
 #if SAMPLE
                     Console.WriteLine($"head: ({headX}, {headY}) tail: ({tailX}, {tailY})");
@@ -78,20 +78,9 @@ namespace AdventOfCode2022.Solutions
             Console.WriteLine(tailPositions.Count);
         }
 
-        class Point
-        {
-            public int X;
-            public int Y;
-
-            public override string ToString()
-            {
-                return $"({X}, {Y})";
-            }
-        }
-
         internal static void Problem2()
         {
-            HashSet<(int, int)> tailPositions = new HashSet<(int, int)>();
+            HashSet<Point> tailPositions = new HashSet<Point>();
 
             Point[] points = new Point[10];
 
@@ -149,7 +138,7 @@ namespace AdventOfCode2022.Solutions
 #endif
                     }
 
-                    tailPositions.Add((points[9].X, points[9].Y));
+                    tailPositions.Add(new Point(points[9].X, points[9].Y));
                 }
             }
 
