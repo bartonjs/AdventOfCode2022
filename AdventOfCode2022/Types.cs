@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace AdventOfCode2022
 {
@@ -152,5 +153,116 @@ namespace AdventOfCode2022
 
         public static bool operator ==(LongPoint3 a, LongPoint3 b) => a.Equals(b);
         public static bool operator !=(LongPoint3 a, LongPoint3 b) => !a.Equals(b);
+    }
+
+    internal abstract class Plane<T>
+    {
+        internal abstract ref T this[Point point] { get; }
+        internal abstract bool ContainsPoint(Point point);
+        internal abstract IEnumerable<Point> AllPoints();
+
+        internal bool TryGetValue(Point point, out T value)
+        {
+            if (ContainsPoint(point))
+            {
+                value = this[point];
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+    }
+
+    internal sealed class FixedPlane<T> : Plane<T>
+    {
+        private readonly int _width;
+        private readonly int _height;
+        private readonly T[,] _data;
+
+        internal FixedPlane(int width, int height)
+        {
+            _data = new T[width, height];
+            _width = width;
+            _height = height;
+        }
+
+        internal override ref T this[Point point] => ref _data[point.X, point.Y];
+
+        internal override bool ContainsPoint(Point point)
+        {
+            return point.X >= 0 && point.X < _width && point.Y >= 0 && point.Y < _height;
+        }
+
+        internal override IEnumerable<Point> AllPoints()
+        {
+            for (int x = 0; x < _width; x++)
+            {
+                for (int y = 0; y < _height; y++)
+                {
+                    yield return new Point(x, y);
+                }
+            }
+        }
+    }
+
+    internal sealed class DynamicPlane<T> : Plane<T>
+    {
+        private readonly int _width;
+        private readonly List<T[]> _data;
+
+        internal DynamicPlane(int width, int heightHint = 0)
+        {
+            _data = new List<T[]>(heightHint);
+            _width = width;
+        }
+
+        internal DynamicPlane(T[] row0, int heightHint = 0)
+        {
+            _data = new List<T[]>(heightHint);
+            _width = row0.Length;
+
+            _data.Add(row0);
+        }
+
+        internal override ref T this[Point point] => ref _data[point.Y][point.X];
+
+        internal override bool ContainsPoint(Point point)
+        {
+            return point.X >= 0 && point.X < _width && point.Y >= 0 && point.Y < _data.Count;
+        }
+
+        internal override IEnumerable<Point> AllPoints()
+        {
+            int height = Height;
+
+            for (int x = 0; x < _width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    yield return new Point(x, y);
+                }
+            }
+        }
+
+        internal int Height => _data.Count;
+
+        internal T[] PushY()
+        {
+            T[] row = new T[_width];
+            _data.Add(row);
+
+            return row;
+        }
+
+        internal void PushY(T[] row)
+        {
+            if (row.Length != _width)
+            {
+                throw new ArgumentException("Bad width");
+            }
+
+            _data.Add(row);
+        }
     }
 }

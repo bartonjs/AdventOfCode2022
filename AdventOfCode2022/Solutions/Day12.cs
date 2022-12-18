@@ -7,9 +7,9 @@ namespace AdventOfCode2022.Solutions
 {
     internal partial class Day12
     {
-        private static (int[][], Point, Point) LoadData()
+        private static (Plane<int>, Point, Point) LoadData()
         {
-            List<int[]> grid = new List<int[]>();
+            DynamicPlane<int> plane = null;
             Point start = default;
             Point end = default;
 
@@ -22,19 +22,26 @@ namespace AdventOfCode2022.Solutions
                 if (startIdx >= 0)
                 {
                     row[startIdx] = 0;
-                    start = new Point(grid.Count, startIdx);
+                    start = new Point(startIdx, plane?.Height ?? 0);
                 }
 
                 if (endIdx >= 0)
                 {
                     row[endIdx] = 25;
-                    end = new Point(grid.Count, endIdx);
+                    end = new Point(endIdx, plane?.Height ?? 0);
                 }
 
-                grid.Add(row);
+                if (plane is null)
+                {
+                    plane = new DynamicPlane<int>(row);
+                }
+                else
+                {
+                    plane.PushY(row);
+                }
             }
 
-            return (grid.ToArray(), start, end);
+            return (plane, start, end);
         }
 
         [GeneratedRegex(@"^(.) (\d+)")]
@@ -42,33 +49,28 @@ namespace AdventOfCode2022.Solutions
 
         internal static void Problem1()
         {
-            (int[][] grid, Point start, Point end) = LoadData();
+            (Plane<int> grid, Point start, Point end) = LoadData();
 
             Console.WriteLine(FindCheapestPath(grid, start, end));
         }
 
         internal static void Problem2()
         {
-            (int[][] grid, Point start, Point end) = LoadData();
+            (Plane<int> grid, Point start, Point end) = LoadData();
             int lowest = int.MaxValue;
 
-            for (int x = 0; x < grid.Length; x++)
+            foreach (Point p in grid.AllPoints())
             {
-                int[] colData = grid[x];
-
-                for (int y = 0; y < colData.Length; y++)
+                if (grid[p] == 0)
                 {
-                    if (colData[y] == 0)
-                    {
-                        lowest = Math.Min(lowest, FindCheapestPath(grid, new Point(x, y), end));
-                    }
+                    lowest = Math.Min(lowest, FindCheapestPath(grid, p, end));
                 }
             }
 
             Console.WriteLine(lowest);
         }
 
-        private static int FindCheapestPath(int[][] grid, Point start, Point end)
+        private static int FindCheapestPath(Plane<int> grid, Point start, Point end)
         {
             return Utils.AStar(
                 grid,
@@ -77,28 +79,33 @@ namespace AdventOfCode2022.Solutions
                 Neighbors,
                 (candidate, end, world) => candidate.ManhattanDistance(end));
 
-            static IEnumerable<(Point Neighbor, int Cost)> Neighbors(Point from, int[][] world)
+            static IEnumerable<(Point Neighbor, int Cost)> Neighbors(Point from, Plane<int> world)
             {
-                int curHeight = world[from.X][from.Y];
+                int curHeight = world[from];
+                Point plusX = new Point(from.X + 1, from.Y);
+                Point minusX = new Point(from.X - 1, from.Y);
+                Point plusY = new Point(from.X, from.Y + 1);
+                Point minusY = new Point(from.X, from.Y - 1);
+                int testHeight;
 
-                if (from.X > 0 && world[from.X - 1][from.Y] - curHeight <= 1)
+                if (world.TryGetValue(plusX, out testHeight) && testHeight - curHeight <= 1)
                 {
-                    yield return (new Point(from.X - 1, from.Y), 1);
+                    yield return (plusX, 1);
                 }
 
-                if (from.X < world.Length - 1 && world[from.X + 1][from.Y] - curHeight <= 1)
+                if (world.TryGetValue(plusY, out testHeight) && testHeight - curHeight <= 1)
                 {
-                    yield return (new Point(from.X + 1, from.Y), 1);
+                    yield return (plusY, 1);
                 }
 
-                if (from.Y > 0 && world[from.X][from.Y - 1] - curHeight <= 1)
+                if (world.TryGetValue(minusX, out testHeight) && testHeight - curHeight <= 1)
                 {
-                    yield return (new Point(from.X, from.Y - 1), 1);
+                    yield return (minusX, 1);
                 }
 
-                if (from.Y < world[from.X].Length - 1 && world[from.X][from.Y + 1] - curHeight <= 1)
+                if (world.TryGetValue(minusY, out testHeight) && testHeight - curHeight <= 1)
                 {
-                    yield return (new Point(from.X, from.Y + 1), 1);
+                    yield return (minusY, 1);
                 }
             }
         }
