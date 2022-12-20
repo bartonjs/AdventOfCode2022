@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -112,6 +113,75 @@ namespace AdventOfCode2022
             return TCost.MaxValue;
         }
 
+        internal static TScore BreadthFirstBest<TNode, TOther, TScore>(
+            TNode start,
+            TOther extraInfo,
+            Func<TNode, TOther, IEnumerable<TNode>> children,
+            Func<TNode, TOther, TScore> scorer,
+            bool childrenDoNotRepeat = false)
+            where TNode : IEquatable<TNode>
+            where TScore : IComparable<TScore>, IMinMaxValue<TScore>
+        {
+            HashSet<TNode> dedup = null;
+            Queue<TNode> queue = new Queue<TNode>();
+            queue.Enqueue(start);
+#if TRACE
+            int peakQueue = 1;
+            int prunedNodes = 0;
+            int processedNodes = 0;
+            int promotions = 0;
+            Stopwatch stopwatch = Stopwatch.StartNew();
+#endif
+
+            if (!childrenDoNotRepeat)
+            {
+                dedup = new HashSet<TNode>();
+            }
+
+            TScore max = TScore.MinValue;
+
+            while (queue.Count > 0)
+            {
+#if TRACE
+                processedNodes++;
+#endif
+
+                TNode item = queue.Dequeue();
+                TScore curScore = scorer(item, extraInfo);
+
+                if (curScore.CompareTo(max) > 0)
+                {
+                    max = curScore;
+#if TRACE
+                    promotions++;
+#endif
+                }
+
+                foreach (TNode next in children(item, extraInfo))
+                {
+                    if (childrenDoNotRepeat || dedup.Add(next))
+                    {
+                        queue.Enqueue(next);
+#if TRACE
+                        peakQueue = Math.Max(peakQueue, queue.Count);
+                    }
+                    else
+                    {
+                        prunedNodes++;
+#endif
+                    }
+                }
+            }
+
+#if TRACE
+            Console.WriteLine(
+                $">> {nameof(BreadthFirstBest)} completed in {stopwatch.Elapsed.TotalMilliseconds:N3}ms with{Environment.NewLine}" +
+                $">>   processed: {processedNodes:N0} peak {peakQueue:N0} pruned {prunedNodes:N0} promoted {promotions:N0}");
+#endif
+
+            return max;
+        }
+
         internal static (bool Found, TNode Value) BreadthFirstSearch<TWorld, TNode>(
             TWorld world,
             TNode start,
@@ -121,7 +191,7 @@ namespace AdventOfCode2022
             where TNode : IEquatable<TNode>
         {
             HashSet<TNode> dedup = null;
-            Queue<TNode> queue = new Queue<TNode>();
+            Queue<TNode> queue = new Queue<TNode>(1048576*8);
             queue.Enqueue(start);
 
             if (!childrenDoNotRepeat)
@@ -148,6 +218,54 @@ namespace AdventOfCode2022
             }
 
             return (false, default(TNode));
+        }
+
+        internal static TScore DepthFirstBest<TNode, TOther, TScore>(
+            TNode start,
+            TOther extraInfo,
+            Func<TNode, TOther, IEnumerable<TNode>> children,
+            Func<TNode, TOther, TScore> scorer)
+            where TNode : IEquatable<TNode>
+            where TScore : IComparable<TScore>, IMinMaxValue<TScore>
+        {
+            return DepthFirstBestCore(new(), start, extraInfo, children, scorer);
+        }
+
+        private static TScore DepthFirstBestCore<TNode, TOther, TScore>(
+            Dictionary<TNode, TScore> cache,
+            TNode currentNode,
+            TOther extraInfo,
+            Func<TNode, TOther, IEnumerable<TNode>> children,
+            Func<TNode, TOther, TScore> scorer)
+            where TNode : IEquatable<TNode>
+            where TScore : IComparable<TScore>, IMinMaxValue<TScore>
+        {
+            TScore currentScore;
+
+            if (cache.TryGetValue(currentNode, out currentScore))
+            {
+                return currentScore;
+            }
+
+            currentScore = scorer(currentNode, extraInfo);
+
+            foreach (TNode child in children(currentNode, extraInfo))
+            {
+                TScore childScore = DepthFirstBestCore(
+                    cache,
+                    child,
+                    extraInfo,
+                    children,
+                    scorer);
+
+                if (childScore.CompareTo(currentScore) > 0)
+                {
+                    currentScore = childScore;
+                }
+            }
+
+            cache[currentNode] = currentScore;
+            return currentScore;
         }
 
         private static void ChangePriority<TElement, TPriority>(

@@ -118,6 +118,91 @@ namespace AdventOfCode2022.Solutions
 
         private static int Stuff(Dictionary<State, int> cache, State testState, Blueprint blueprint)
         {
+            return Utils.DepthFirstBest(
+                testState,
+                blueprint,
+                Children,
+                (state, _) => state.Geodes);
+
+            static IEnumerable<State> Children(State testState, Blueprint blueprint)
+            {
+                if (testState.TimeRemaining <= 0)
+                {
+                    yield break;
+                }
+
+                State nextStateShared = testState with
+                {
+                    Ore = testState.Ore + testState.OreRobots,
+                    Clay = testState.Clay + testState.ClayRobots,
+                    Obsidian = testState.Obsidian + testState.ObsidianRobots,
+                    Geodes = testState.Geodes + testState.GeodeRobots,
+                    TimeRemaining = testState.TimeRemaining - 1,
+                };
+
+                if (testState.TimeRemaining > 1)
+                {
+                    if (testState.Ore >= blueprint.GeodeRobotOreCost &&
+                        testState.Obsidian >= blueprint.GeodeRobotObsidianCost)
+                    {
+                        State geodeRobotState = nextStateShared with
+                        {
+                            GeodeRobots = nextStateShared.GeodeRobots + 1,
+                            Ore = nextStateShared.Ore - blueprint.GeodeRobotOreCost,
+                            Obsidian = nextStateShared.Obsidian - blueprint.GeodeRobotObsidianCost,
+                        };
+
+                        yield return geodeRobotState;
+                        yield break;
+                    }
+                
+                    if (testState.ObsidianRobots < blueprint.GeodeRobotObsidianCost &&
+                        testState.Ore >= blueprint.ObsidianRobotOreCost &&
+                        testState.Clay >= blueprint.ObsidianRobotClayCost)
+                    {
+                        State obsidianRobotState = nextStateShared with
+                        {
+                            ObsidianRobots = nextStateShared.ObsidianRobots + 1,
+                            Ore = nextStateShared.Ore - blueprint.ObsidianRobotOreCost,
+                            Clay = nextStateShared.Clay - blueprint.ObsidianRobotClayCost,
+                        };
+
+                        yield return obsidianRobotState;
+                    }
+                    else
+                    {
+                        if (testState.ClayRobots < blueprint.ObsidianRobotClayCost &&
+                            testState.Ore >= blueprint.ClayRobotOreCost)
+                        {
+                            State clayRobotState = nextStateShared with
+                            {
+                                ClayRobots = nextStateShared.ClayRobots + 1,
+                                Ore = nextStateShared.Ore - blueprint.ClayRobotOreCost,
+                            };
+
+                            yield return clayRobotState;
+                        }
+
+                        if (testState.OreRobots < blueprint.MaxOreCost &&
+                            testState.Ore >= blueprint.OreRobotOreCost)
+                        {
+                            State oreRobotState = nextStateShared with
+                            {
+                                OreRobots = nextStateShared.OreRobots + 1,
+                                Ore = nextStateShared.Ore - blueprint.OreRobotOreCost,
+                            };
+
+                            yield return oreRobotState;
+                        }
+                    }
+                }
+
+                yield return nextStateShared;
+            }
+        }
+
+        private static int StuffOld(Dictionary<State, int> cache, State testState, Blueprint blueprint)
+        {
             if (testState.TimeRemaining <= 0)
             {
                 return testState.Geodes;
