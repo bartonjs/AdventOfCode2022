@@ -38,6 +38,26 @@ namespace AdventOfCode2022
 
         public static bool operator ==(Point a, Point b) => a.Equals(b);
         public static bool operator !=(Point a, Point b) => !a.Equals(b);
+
+        public Point North()
+        {
+            return new Point(X, Y - 1);
+        }
+
+        public Point South()
+        {
+            return new Point(X, Y + 1);
+        }
+
+        public Point West()
+        {
+            return new Point(X - 1, Y);
+        }
+
+        public Point East()
+        {
+            return new Point(X + 1, Y);
+        }
     }
 
     internal struct LongPoint : IEquatable<LongPoint>
