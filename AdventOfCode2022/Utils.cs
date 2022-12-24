@@ -187,7 +187,8 @@ namespace AdventOfCode2022
             TNode start,
             Predicate<TNode> predicate,
             Func<TNode, TWorld, IEnumerable<TNode>> children,
-            bool childrenDoNotRepeat = false)
+            bool childrenDoNotRepeat = false,
+            Dictionary<TNode, TNode> parentTracker = null)
             where TNode : IEquatable<TNode>
         {
             HashSet<TNode> dedup = null;
@@ -212,6 +213,11 @@ namespace AdventOfCode2022
                 {
                     if (childrenDoNotRepeat || dedup.Add(next))
                     {
+                        if (parentTracker is not null)
+                        {
+                            parentTracker[next] = item;
+                        }
+
                         queue.Enqueue(next);
                     }
                 }
